@@ -51,7 +51,6 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./src/Dockerfile  # <--- 关键修改：指定 Dockerfile 路径
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
