@@ -9,6 +9,10 @@ import { authenticate, AuthenticationError } from "../../apple/authenticate";
 import { generateDeviceId } from "../../apple/config";
 import { getErrorMessage } from "../../utils/error";
 
+// 统一的输入框样式常量（符合 AGENTS.md 规范：input 是交互元素，可以使用 transition-colors）
+const INPUT_CLASS_NAME =
+  "block w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-base text-gray-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-800/50 disabled:text-gray-500 transition-colors";
+
 export default function AddAccountForm() {
   const navigate = useNavigate();
   const { addAccount } = useAccounts();
@@ -75,7 +79,7 @@ export default function AddAccountForm() {
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
                 placeholder={t("accounts.addForm.emailPlaceholder")}
-                className="block w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-base text-gray-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-800/50 disabled:text-gray-500 transition-colors"
+                className={INPUT_CLASS_NAME}
               />
             </div>
 
@@ -93,7 +97,7 @@ export default function AddAccountForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
-                className="block w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-base text-gray-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-800/50 disabled:text-gray-500 transition-colors"
+                className={INPUT_CLASS_NAME}
               />
             </div>
 
@@ -112,7 +116,7 @@ export default function AddAccountForm() {
                   value={deviceId}
                   onChange={(e) => setDeviceId(e.target.value)}
                   disabled={loading || needsCode}
-                  className="block flex-1 min-w-0 h-[42px] rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-base text-gray-900 dark:text-white font-mono focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-800/50 disabled:text-gray-500 transition-colors"
+                  className={`${INPUT_CLASS_NAME} flex-1 min-w-0 h-[42px] font-mono`}
                 />
                 <button
                   type="button"
@@ -146,7 +150,7 @@ export default function AddAccountForm() {
                   onChange={(e) => setCode(e.target.value)}
                   disabled={loading}
                   placeholder={t("accounts.addForm.codePlaceholder")}
-                  className="block w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-base text-gray-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-800/50 disabled:text-gray-500 transition-colors"
+                  className={INPUT_CLASS_NAME}
                   autoFocus
                 />
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">

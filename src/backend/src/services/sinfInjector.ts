@@ -1,13 +1,14 @@
-import { execFile as execFileCb } from "child_process";
-import { promisify } from "util";
-import fs from "fs";
-import path from "path";
-import os from "os";
-import { open as openZip } from "yauzl-promise";
-import type { Readable } from "stream";
-import bplistParser from "bplist-parser";
+import AdmZip from "adm-zip"; // 1. 引入 adm-zip
 import bplistCreator from "bplist-creator";
+import bplistParser from "bplist-parser";
+import { execFile as execFileCb } from "child_process";
+import fs from "fs";
+import os from "os";
+import path from "path";
 import plist from "plist";
+import type { Readable } from "stream";
+import { promisify } from "util";
+import { open as openZip } from "yauzl-promise";
 import type { Sinf } from "../types/index.js";
 
 const execFile = promisify(execFileCb);
@@ -51,8 +52,6 @@ export async function inject(
   }
 
   // Inject iTunesMetadata.plist at the archive root if provided
-  // Frontend sends base64-encoded XML plist; convert to binary plist
-  // to match Apple's native format (PropertyListSerialization .binary)
   if (iTunesMetadata) {
     const xmlBuffer = Buffer.from(iTunesMetadata, "base64");
     const xmlString = xmlBuffer.toString("utf-8");
@@ -92,7 +91,6 @@ async function readIpaMetadata(ipaPath: string): Promise<IpaMetadata> {
     for await (const entry of zip) {
       const filename = entry.filename;
 
-      // Find bundle name from .app directory
       if (
         !bundleName &&
         filename.includes(".app/Info.plist") &&
@@ -107,13 +105,11 @@ async function readIpaMetadata(ipaPath: string): Promise<IpaMetadata> {
         }
       }
 
-      // Read Manifest.plist
       if (!manifestData && filename.endsWith(".app/SC_Info/Manifest.plist")) {
         const stream = await entry.openReadStream();
         manifestData = await streamToBuffer(stream);
       }
 
-      // Read Info.plist (non-Watch)
       if (
         !infoPlistData &&
         filename.includes(".app/Info.plist") &&
@@ -128,7 +124,6 @@ async function readIpaMetadata(ipaPath: string): Promise<IpaMetadata> {
       throw new Error("Could not read bundle name");
     }
 
-    // Parse manifest
     let manifest: { sinfPaths: string[] } | null = null;
     if (manifestData) {
       const parsed = parsePlistBuffer(manifestData);
@@ -140,7 +135,6 @@ async function readIpaMetadata(ipaPath: string): Promise<IpaMetadata> {
       }
     }
 
-    // Parse info plist
     let info: { bundleExecutable: string } | null = null;
     if (infoPlistData) {
       const parsed = parsePlistBuffer(infoPlistData);
@@ -158,17 +152,45 @@ async function readIpaMetadata(ipaPath: string): Promise<IpaMetadata> {
   }
 }
 
+/**
+ * 智能添加文件到 ZIP
+ * 策略：
+ * 1. Windows: 直接使用 adm-zip (因为通常没有 zip 命令)
+ * 2. Linux/Mac: 尝试使用系统 zip 命令 (高性能)，如果失败则 fallback 到 adm-zip
+ */
 async function addFilesToZip(
+  ipaPath: string,
+  files: { entryPath: string; data: Buffer }[],
+): Promise<void> {
+  const isWindows = process.platform === "win32";
+
+  if (isWindows) {
+    return await useAdmZip(ipaPath, files);
+  }
+
+  // Linux/Mac 尝试使用系统 zip
+  try {
+    // 快速检查 zip 是否可用
+    await execFile("zip", ["-v"], { timeout: 2000 });
+    return await useSystemZip(ipaPath, files);
+  } catch (error) {
+    console.warn("⚠️ System 'zip' command not found. Falling back to adm-zip.");
+    return await useAdmZip(ipaPath, files);
+  }
+}
+
+/**
+ * 方案 A: 使用系统 zip 命令 (Linux/Mac 高性能)
+ */
+async function useSystemZip(
   ipaPath: string,
   files: { entryPath: string; data: Buffer }[],
 ): Promise<void> {
   const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "sinf-"));
   const resolvedTmpDir = path.resolve(tmpDir);
   try {
-    // Write files to temp dir preserving ZIP path structure
     const relativePaths: string[] = [];
     for (const file of files) {
-      // Guard against path traversal from IPA-derived entry paths
       const fullPath = path.resolve(tmpDir, file.entryPath);
       if (!fullPath.startsWith(resolvedTmpDir + path.sep)) {
         throw new Error(`Path traversal detected in entry: ${file.entryPath}`);
@@ -178,16 +200,34 @@ async function addFilesToZip(
       relativePaths.push(file.entryPath);
     }
 
-    // Use zip to update the archive in-place
-    // -0: store without compression (SINF/plist files are tiny)
-    // "--" after archive name prevents file args from being parsed as flags
     await execFile("zip", ["-0", ipaPath, "--", ...relativePaths], {
       cwd: tmpDir,
-      maxBuffer: 1024 * 1024,
+      maxBuffer: 1024 * 1024 * 10,
     });
   } finally {
     await fs.promises.rm(tmpDir, { recursive: true, force: true });
   }
+}
+
+/**
+ * 方案 B: 使用 adm-zip (Windows 或无 zip 环境)
+ */
+async function useAdmZip(
+  ipaPath: string,
+  files: { entryPath: string; data: Buffer }[],
+): Promise<void> {
+  const zip = new AdmZip(ipaPath);
+  
+  for (const file of files) {
+    // 简单的路径规范化，防止 ../ 遍历
+    const safePath = path.normalize(file.entryPath).replace(/^(\.\.(\/|\\|$))+/, '');
+    if (!safePath || safePath.startsWith('..')) {
+        throw new Error(`Invalid path: ${file.entryPath}`);
+    }
+    zip.addFile(safePath, file.data);
+  }
+  
+  zip.writeZip(ipaPath);
 }
 
 function parsePlistBuffer(data: Buffer): Record<string, unknown> | null {

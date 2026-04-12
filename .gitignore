@@ -126,6 +126,31 @@ yarn-error.log*
 
 BuildTools/Package.resolved
 
+# Build outputs (app/ is now a pure output directory)
+app/dist
+app/public
+app/node_modules
+app/logs
+app.pid
+app/data
+app/package*.json
+
+# Source code build outputs and dependencies
+src/backend/dist
+src/backend/public
+src/backend/node_modules
+src/frontend/dist
+src/frontend/node_modules
+
+# Runtime data directories
+data/
+logs/
+
+# Environment files
+.env
+.env.local
+.env.test
+
 # Docker data directory
 /data/
 

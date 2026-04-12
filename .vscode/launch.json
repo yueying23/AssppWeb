@@ -1,0 +1,114 @@
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "🚀 后端调试 (Backend)",
+            "runtimeExecutable": "${workspaceFolder}/src/backend/node_modules/.bin/tsx",
+            "runtimeArgs": ["watch"],
+            "args": ["${workspaceFolder}/src/backend/src/index.ts"],
+            "cwd": "${workspaceFolder}/src/backend",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "skipFiles": [
+                "<node_internals>/**",
+                "**/node_modules/**"
+            ],
+            "env": {
+                "NODE_ENV": "development",
+                "PORT": "8368",
+                "DATA_DIR": "${workspaceFolder}/data",
+                "JWT_SECRET": "dev-secret-key-for-debugging-only",
+                "ACCESS_PASSWORD": "",
+                "VITE_ACCOUNT_HASH_SALT": "dev-salt-for-debugging"
+            },
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceFolder}/src/backend/dist/**/*.js"
+            ]
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "🌐 前端调试 (Frontend - Chrome)",
+            "url": "http://localhost:5173",
+            "webRoot": "${workspaceFolder}/src/frontend",
+            "sourceMapPathOverrides": {
+                "webpack:///./~/*": "${workspaceFolder}/src/frontend/node_modules/*",
+                "webpack:///./*": "${workspaceFolder}/src/frontend/*",
+                "webpack:///*": "*",
+                "webpack:///src/*": "${workspaceFolder}/src/frontend/src/*"
+            },
+            "trace": true,
+            "userDataDir": false,
+            "runtimeArgs": [
+                "--remote-debugging-port=9222"
+            ]
+        },
+        {
+            "type": "msedge",
+            "request": "launch",
+            "name": "🌐 前端调试 (Frontend - Edge)",
+            "url": "http://localhost:5173",
+            "webRoot": "${workspaceFolder}/src/frontend",
+            "sourceMapPathOverrides": {
+                "webpack:///./~/*": "${workspaceFolder}/src/frontend/node_modules/*",
+                "webpack:///./*": "${workspaceFolder}/src/frontend/*",
+                "webpack:///*": "*",
+                "webpack:///src/*": "${workspaceFolder}/src/frontend/src/*"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "🧪 后端测试 (Backend Tests)",
+            "program": "${workspaceFolder}/src/backend/node_modules/vitest/vitest.mjs",
+            "args": ["run"],
+            "cwd": "${workspaceFolder}/src/backend",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "skipFiles": [
+                "<node_internals>/**",
+                "**/node_modules/**"
+            ],
+            "env": {
+                "NODE_ENV": "test"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "🧪 前端测试 (Frontend Tests)",
+            "program": "${workspaceFolder}/src/frontend/node_modules/vitest/vitest.mjs",
+            "args": ["run"],
+            "cwd": "${workspaceFolder}/src/frontend",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "skipFiles": [
+                "<node_internals>/**",
+                "**/node_modules/**"
+            ],
+            "env": {
+                "NODE_ENV": "test"
+            }
+        }
+    ],
+    "compounds": [
+        {
+            "name": "🔥 全栈调试 (Full Stack)",
+            "configurations": ["🚀 后端调试 (Backend)", "🌐 前端调试 (Frontend - Chrome)"],
+            "preLaunchTask": null,
+            "stopAll": true
+        },
+        {
+            "name": "🔥 全栈调试 (Full Stack - Edge)",
+            "configurations": ["🚀 后端调试 (Backend)", "🌐 前端调试 (Frontend - Edge)"],
+            "preLaunchTask": null,
+            "stopAll": true
+        }
+    ]
+}

@@ -23,10 +23,26 @@ export function firstAccountCountry(accounts: Account[]): string | undefined {
   return undefined;
 }
 
+/**
+ * 生成账户哈希（带 Salt 支持）
+ * @param account 账户对象
+ * @returns SHA-256 哈希字符串
+ * 
+ * 安全说明：
+ * - 如果设置了 VITE_ACCOUNT_HASH_SALT 环境变量，则使用加盐哈希防止彩虹表攻击
+ * - 否则保持向后兼容，仅对标识符进行纯哈希
+ */
 export async function accountHash(account: Account): Promise<string> {
   const source =
     account.directoryServicesIdentifier || account.appleId || account.email;
-  return sha256Hex(source);
+  
+  // 从环境变量读取 Salt（如果存在）
+  const salt = import.meta.env.VITE_ACCOUNT_HASH_SALT;
+  
+  // 如果有 Salt，使用加盐哈希；否则保持向后兼容
+  const data = salt ? `${source}:${salt}` : source;
+  
+  return sha256Hex(data);
 }
 
 async function sha256Hex(value: string): Promise<string> {

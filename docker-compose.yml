@@ -1,0 +1,85 @@
+# ==========================================
+# ASSPP Web - Docker Compose 配置
+# 支持本地构建和远程镜像两种方式
+# ==========================================
+
+services:
+  asspp-web:
+    # 方式1：使用官方镜像（默认）
+    image: ghcr.io/yueying23/assppweb:latest
+    
+    # 方式2：从本地构建（取消注释以下行，注释上面的image）
+    # build:
+    #   context: .
+    #   dockerfile: src/Dockerfile
+    #   args:
+    #     BUILD_COMMIT: ${BUILD_COMMIT:-local}
+    #     BUILD_DATE: ${BUILD_DATE:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}
+    
+    container_name: asspp-web
+    
+    # 端口映射
+    ports:
+      - "${HOST_PORT:-8080}:8080"
+    
+    # 数据持久化
+    volumes:
+      - asspp-data:/data
+      # 或者使用主机目录（取消注释下面这行，注释上面那行）
+      # - ./data:/data
+    
+    # 环境变量配置
+    environment:
+      # 基础配置
+      - NODE_ENV=production
+      - PORT=8080
+      - DATA_DIR=/data
+      
+      # 安全配置（强烈建议设置）
+      - ACCESS_PASSWORD=${ACCESS_PASSWORD:-}
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - VITE_ACCOUNT_HASH_SALT=${VITE_ACCOUNT_HASH_SALT:-}
+      
+      # 可选配置
+      - DOWNLOAD_THREADS=${DOWNLOAD_THREADS:-8}
+      - PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-}
+      
+      # 自动清理配置（0表示禁用）
+      - AUTO_CLEANUP_DAYS=${AUTO_CLEANUP_DAYS:-0}
+      - AUTO_CLEANUP_MAX_MB=${AUTO_CLEANUP_MAX_MB:-0}
+      
+      # 下载大小限制（MB，0表示禁用）
+      - MAX_DOWNLOAD_MB=${MAX_DOWNLOAD_MB:-0}
+    
+    # 重启策略
+    restart: unless-stopped
+    
+    # 日志配置
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "128m"
+        max-file: "5"
+    
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/settings"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    # 网络配置
+    networks:
+      - asspp-network
+
+# 命名卷（推荐用于数据持久化）
+volumes:
+  asspp-data:
+    driver: local
+    name: asspp-web-data
+
+# 网络配置
+networks:
+  asspp-network:
+    driver: bridge

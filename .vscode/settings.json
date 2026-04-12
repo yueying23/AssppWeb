@@ -1,0 +1,130 @@
+{
+    // ==========================================
+    // 编辑器基础配置
+    // ==========================================
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": false,
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit",
+        "source.organizeImports": "explicit"
+    },
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.wordWrap": "on",
+    "editor.rulers": [100],
+    
+    // ==========================================
+    // TypeScript/JavaScript 配置
+    // ==========================================
+    "typescript.preferences.importModuleSpecifier": "relative",
+    "javascript.preferences.importModuleSpecifier": "relative",
+    "typescript.suggest.paths": true,
+    "javascript.suggest.paths": true,
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    "javascript.updateImportsOnFileMove.enabled": "always",
+    
+    // ==========================================
+    // ESLint 配置
+    // ==========================================
+    "eslint.validate": [
+        "javascript",
+        "javascriptreact",
+        "typescript",
+        "typescriptreact"
+    ],
+    "eslint.run": "onType",
+    
+    // ==========================================
+    // Tailwind CSS 配置
+    // ==========================================
+    "tailwindCSS.includeLanguages": {
+        "typescript": "javascript",
+        "typescriptreact": "javascript"
+    },
+    "tailwindCSS.experimental.classRegex": [
+        ["className\\s*=\\s*['\"]([^'\"]*)['\"]", "className"],
+        ["class\\s*=\\s*['\"]([^'\"]*)['\"]", "class"]
+    ],
+    
+    // ==========================================
+    // 文件关联
+    // ==========================================
+    "files.associations": {
+        "*.tsx": "typescriptreact",
+        "*.ts": "typescript",
+        ".env*": "properties",
+        "*.sh": "shellscript"
+    },
+    "files.exclude": {
+        "**/.git": true,
+        "**/.DS_Store": true,
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/build": true,
+        "**/*.pid": true,
+        "**/logs": false
+    },
+    "files.watcherExclude": {
+        "**/node_modules/**": true,
+        "**/dist/**": true,
+        "**/app/dist/**": true,
+        "**/app/public/**": true,
+        "**/app/node_modules/**": true,
+        "**/logs/**": true,
+        "**/.git/objects/**": true,
+        "**/.git/subtree-cache/**": true
+    },
+    
+    // ==========================================
+    // 搜索排除
+    // ==========================================
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/app/dist": true,
+        "**/app/public": true,
+        "**/app/node_modules": true,
+        "**/logs": true,
+        "**/*.log": true,
+        "**/.git": true,
+        "**/coverage": true
+    },
+    
+    // ==========================================
+    // Terminal 配置
+    // ==========================================
+    "terminal.integrated.profiles.windows": {
+        "Git Bash": {
+            "path": "C:\\Program Files\\Git\\bin\\bash.exe",
+            "args": [],
+            "icon": "terminal-bash"
+        },
+        "PowerShell": {
+            "source": "PowerShell",
+            "icon": "terminal-powershell"
+        }
+    },
+    "terminal.integrated.defaultProfile.windows": "Git Bash",
+    
+    // ==========================================
+    // Debug 配置
+    // ==========================================
+    "debug.javascript.autoAttachFilter": "disabled",
+    "debug.javascript.usePreview": true,
+    
+    // ==========================================
+    // Git 配置
+    // ==========================================
+    "git.autofetch": true,
+    "git.confirmSync": false,
+    "git.enableSmartCommit": true,
+    
+    // ==========================================
+    // 其他配置
+    // ==========================================
+    "breadcrumbs.enabled": true,
+    "explorer.compactFolders": false,
+    "workbench.editor.enablePreview": false,
+    "workbench.editor.showTabs": "multiple"
+}

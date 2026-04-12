@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# ==========================================
+# ASSPP Web 日志轮转配置示例
+# 将此文件保存为 /etc/logrotate.d/asspp-web
+# ==========================================
+
+/home/你的用户名/asspp-web/logs/*.log {
+    daily              # 每天轮转
+    rotate 30          # 保留30天
+    compress           # 压缩旧日志
+    delaycompress      # 延迟一天压缩
+    missingok          # 日志文件不存在不报错
+    notifempty         # 空文件不轮转
+    create 0644 user group  # 创建新文件的权限
+    dateext            # 使用日期作为后缀
+    dateformat -%Y%m%d # 日期格式
+    
+    # 轮转后执行的命令（可选：通知应用重新打开日志文件）
+    postrotate
+        # 如果需要，可以发送信号让应用重新打开日志文件
+        # kill -USR1 $(cat /home/你的用户名/asspp-web/app.pid)
+    endscript
+}

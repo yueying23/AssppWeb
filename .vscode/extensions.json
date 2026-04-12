@@ -1,0 +1,33 @@
+{
+    "recommendations": [
+        // TypeScript 和 JavaScript 支持
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        
+        // React 开发支持
+        "dsznajder.es7-react-js-snippets",
+        "bradlc.vscode-tailwindcss",
+        
+        // Docker 支持
+        "ms-azuretools.vscode-docker",
+        
+        // Git 增强
+        "eamodio.gitlens",
+        
+        // 数据库支持（如果需要查看 IndexedDB）
+        "cweijan.vscode-database-client2",
+        
+        // 代码拼写检查
+        "streetsidesoftware.code-spell-checker",
+        
+        // REST Client（测试 API）
+        "humao.rest-client",
+        
+        // Markdown 增强
+        "yzhang.markdown-all-in-one",
+        
+        // JSON 格式化
+        "quicktype.quicktype"
+    ],
+    "unwantedRecommendations": []
+}

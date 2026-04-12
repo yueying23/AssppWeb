@@ -1,0 +1,280 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "🔍 诊断开发环境",
+            "type": "shell",
+            "command": "bash",
+            "args": ["-c", "echo '=== Node.js 版本 ===' && node --version && echo '' && echo '=== npm 版本 ===' && npm --version && echo '' && echo '=== 后端依赖检查 ===' && (cd src/backend && ls node_modules/.bin/tsx* > /dev/null 2>&1 && echo '✅ tsx 已安装' || echo '❌ tsx 未安装，请运行: 安装后端依赖') && echo '' && echo '=== 前端依赖检查 ===' && (cd src/frontend && ls node_modules/.bin/vite > /dev/null 2>&1 && echo '✅ vite 已安装' || echo '❌ vite 未安装，请运行: 安装前端依赖')"],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "dedicated",
+                "showReuseMessage": true,
+                "clear": true
+            }
+        },
+        {
+            "label": "📥 安装后端依赖",
+            "type": "shell",
+            "command": "npm",
+            "args": ["install"],
+            "options": {
+                "cwd": "${workspaceFolder}/src/backend"
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "dedicated",
+                "showReuseMessage": true,
+                "clear": true
+            }
+        },
+        {
+            "label": "📥 安装前端依赖",
+            "type": "shell",
+            "command": "npm",
+            "args": ["install"],
+            "options": {
+                "cwd": "${workspaceFolder}/src/frontend"
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "dedicated",
+                "showReuseMessage": true,
+                "clear": true
+            }
+        },
+        {
+            "label": "📥 安装所有依赖",
+            "dependsOn": [
+                "📥 安装后端依赖",
+                "📥 安装前端依赖"
+            ],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        },
+        {
+            "label": "🚀 启动后端开发服务器",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "dev"],
+            "options": {
+                "cwd": "${workspaceFolder}/src/backend"
+            },
+            "isBackground": true,
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": "^.*$",
+                    "file": 1,
+                    "location": 2,
+                    "message": 3
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "Starting server",
+                    "endsPattern": "Server listening on"
+                }
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false,
+                "group": "develop"
+            }
+        },
+        {
+            "label": "🌐 启动前端开发服务器",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "dev"],
+            "options": {
+                "cwd": "${workspaceFolder}/src/frontend"
+            },
+            "isBackground": true,
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": "^.*$",
+                    "file": 1,
+                    "location": 2,
+                    "message": 3
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "VITE",
+                    "endsPattern": "Local:"
+                }
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false,
+                "group": "develop"
+            }
+        },
+        {
+            "label": "🔥 启动全栈开发环境",
+            "dependsOn": [
+                "🚀 启动后端开发服务器",
+                "🌐 启动前端开发服务器"
+            ],
+            "dependsOrder": "parallel",
+            "problemMatcher": []
+        },
+                {
+            "label": "📦 构建应用",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "./scripts/build.sh"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "dedicated",
+                "showReuseMessage": true,
+                "clear": true
+            }
+        },
+        {
+            "label": "▶️ 启动应用（生产模式）",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "./scripts/start.sh"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "dedicated",
+                "showReuseMessage": true,
+                "clear": true
+            }
+        },
+        {
+            "label": "🧪 运行后端测试",
+            "type": "shell",
+            "command": "npm",
+            "args": ["test"],
+            "options": {
+                "cwd": "${workspaceFolder}/src/backend"
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "dedicated",
+                "showReuseMessage": true,
+                "clear": true
+            }
+        },
+        {
+            "label": "🧪 运行前端测试",
+            "type": "shell",
+            "command": "npm",
+            "args": ["test"],
+            "options": {
+                "cwd": "${workspaceFolder}/src/frontend"
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "dedicated",
+                "showReuseMessage": true,
+                "clear": true
+            }
+        },
+        {
+            "label": "🧪 运行所有测试",
+            "dependsOn": [
+                "🧪 运行后端测试",
+                "🧪 运行前端测试"
+            ],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        },
+        {
+            "label": "🐳 Docker Compose 启动",
+            "type": "shell",
+            "command": "docker",
+            "args": ["compose", "up", "-d", "--build"],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "dedicated",
+                "showReuseMessage": true,
+                "clear": true
+            }
+        },
+        {
+            "label": "🐳 Docker Compose 停止",
+            "type": "shell",
+            "command": "docker",
+            "args": ["compose", "down"],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "dedicated",
+                "showReuseMessage": true,
+                "clear": false
+            }
+        },
+        {
+            "label": "🧹 清理构建产物",
+            "type": "shell",
+            "command": "rm",
+            "args": ["-rf", "${workspaceFolder}/app/dist", "${workspaceFolder}/app/public", "${workspaceFolder}/app/node_modules"],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "dedicated",
+                "showReuseMessage": true,
+                "clear": false
+            }
+        }
+    ]
+}

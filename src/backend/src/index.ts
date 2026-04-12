@@ -15,13 +15,55 @@ import installRoutes from "./routes/install.js";
 import settingsRoutes from "./routes/settings.js";
 import bagRoutes from "./routes/bag.js";
 
+// Validate environment configuration on startup
+function validateConfig() {
+  const warnings: string[] = [];
+  const errors: string[] = [];
+
+  // JWT_SECRET validation
+  if (!process.env.JWT_SECRET || process.env.JWT_SECRET === "change-me-in-production") {
+    if (process.env.NODE_ENV === "production") {
+      errors.push("JWT_SECRET must be set in production environment");
+    } else {
+      warnings.push("JWT_SECRET is using default value (not recommended for production)");
+    }
+  }
+
+  // PORT validation
+  if (config.port < 1 || config.port > 65535) {
+    errors.push(`Invalid PORT: ${config.port} (must be 1-65535)`);
+  }
+
+  // DOWNLOAD_THREADS validation
+  const threads = parseInt(process.env.DOWNLOAD_THREADS || "8", 10);
+  if (threads < 1 || threads > 32) {
+    warnings.push(`DOWNLOAD_THREADS=${threads} is outside recommended range (1-32)`);
+  }
+
+  // Log warnings
+  if (warnings.length > 0) {
+    console.warn("⚠️  Configuration warnings:");
+    warnings.forEach((w) => console.warn(`   - ${w}`));
+  }
+
+  // Halt on errors
+  if (errors.length > 0) {
+    console.error("❌ Configuration errors:");
+    errors.forEach((e) => console.error(`   - ${e}`));
+    process.exit(1);
+  }
+}
+
 const app = express();
 
 // Middleware
 app.use(httpsRedirect);
 app.use(express.json({ limit: "50mb" }));
 
-// API routes
+// Public API routes (no auth required)
+app.use("/api/health", settingsRoutes);
+
+// Protected API routes
 app.use("/api", accessAuth);
 app.use("/api", authRoutes);
 app.use("/api", searchRoutes);
@@ -60,9 +102,15 @@ setupWsProxy(server);
 // Ensure data directory exists
 fs.mkdirSync(config.dataDir, { recursive: true });
 
+// Validate configuration before starting
+validateConfig();
+
 server.listen(config.port, () => {
-  console.log(`Server listening on port ${config.port}`);
-  console.log(`Data directory: ${path.resolve(config.dataDir)}`);
+  console.log(`✅ Server listening on port ${config.port}`);
+  console.log(`📂 Data directory: ${path.resolve(config.dataDir)}`);
+  if (process.env.NODE_ENV === "production") {
+    console.log(`🔒 Access protection: ${config.accessPassword ? "enabled" : "disabled"}`);
+  }
 });
 
 export { app, server };
