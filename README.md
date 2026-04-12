@@ -1,5 +1,9 @@
 # AssppWeb
 
+> **Note**: This project is a fork of [Lakr233/AssppWeb](https://github.com/Lakr233/AssppWeb), optimized for personal usage scenarios with enhanced cross-platform compatibility and deployment scripts.
+>
+> **注意**：本项目是 [Lakr233/AssppWeb](https://github.com/Lakr233/AssppWeb) 的 Fork 版本，针对个人使用场景进行了优化，增强了跨平台兼容性和部署脚本。
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Docker Pulls](https://img.shields.io/docker/pulls/ghcr.io/yueying23/assppweb)](https://github.com/yueying23/AssppWeb/pkgs/container/assppweb)
 [![Node.js Version](https://img.shields.io/badge/Node.js-20+-green)](https://nodejs.org/)
@@ -352,18 +356,6 @@ tail -f logs/app-$(date +%Y-%m-%d).log
 
 ---
 
-## 🤝 贡献
-
-欢迎贡献代码、报告问题或提出建议！
-
-### 贡献流程
-
-1. Fork 本仓库
-2. 创建功能分支 (`git checkout -b feature/amazing-feature`)
-3. 提交更改 (`git commit -m 'Add amazing feature'`)
-4. 推送到分支 (`git push origin feature/amazing-feature`)
-5. 开启 Pull Request
-
 ### 开发前必读
 
 - 📖 [AGENTS.md](AGENTS.md) - 完整的技术规范和开发指南（英文）
@@ -383,12 +375,11 @@ tail -f logs/app-$(date +%Y-%m-%d).log
 
 本项目仅供学习和研究使用。使用者应遵守当地法律法规及 Apple 服务条款。开发者不对因使用本软件而产生的任何后果负责。
 
-**请尊重知识产权，仅下载您拥有合法使用权的应用。**
-
 ---
 
 ## 🙏 致谢
 
+- **[Lakr233/AssppWeb](https://github.com/Lakr233/AssppWeb)** - 本项目的原始基础版本，感谢原作者 [@Lakr233](https://github.com/Lakr233) 的优秀工作。
 - [@mercuryworkshop/wisp-js](https://github.com/mercuryworkshop/wisp-js) - Wisp 协议实现
 - [libcurl.js](https://github.com/curl/libcurl.js) - 浏览器端 cURL WASM 移植
 - [ApplePackage](references/ApplePackage/) - Swift 参考实现（事实标准）
