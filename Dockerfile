@@ -8,11 +8,11 @@ FROM node:20-alpine AS frontend-build
 WORKDIR /app/frontend
 
 # 复制依赖文件并安装（利用Docker缓存层）
-COPY frontend/package*.json ./
+COPY src/frontend/package*.json ./
 RUN npm ci --frozen-lockfile
 
 # 复制源代码并构建
-COPY frontend/ ./
+COPY src/frontend/ ./
 RUN npm run build
 
 # Stage 2: 构建后端
@@ -24,11 +24,11 @@ RUN apk add --no-cache python3 make g++
 WORKDIR /app/backend
 
 # 复制依赖文件并安装
-COPY backend/package*.json ./
+COPY src/backend/package*.json ./
 RUN npm ci --frozen-lockfile
 
 # 复制源代码并构建
-COPY backend/ ./
+COPY src/backend/ ./
 RUN npm run build
 
 # Stage 3: 生产运行环境
