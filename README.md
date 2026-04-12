@@ -352,18 +352,6 @@ tail -f logs/app-$(date +%Y-%m-%d).log
 
 ---
 
-## 🤝 贡献
-
-欢迎贡献代码、报告问题或提出建议！
-
-### 贡献流程
-
-1. Fork 本仓库
-2. 创建功能分支 (`git checkout -b feature/amazing-feature`)
-3. 提交更改 (`git commit -m 'Add amazing feature'`)
-4. 推送到分支 (`git push origin feature/amazing-feature`)
-5. 开启 Pull Request
-
 ### 开发前必读
 
 - 📖 [AGENTS.md](AGENTS.md) - 完整的技术规范和开发指南（英文）
@@ -382,8 +370,6 @@ tail -f logs/app-$(date +%Y-%m-%d).log
 ## ⚠️ 免责声明
 
 本项目仅供学习和研究使用。使用者应遵守当地法律法规及 Apple 服务条款。开发者不对因使用本软件而产生的任何后果负责。
-
-**请尊重知识产权，仅下载您拥有合法使用权的应用。**
 
 ---
 
