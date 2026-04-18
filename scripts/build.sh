@@ -66,8 +66,27 @@ if [ ! -d "node_modules" ]; then
     npm ci --frozen-lockfile
 fi
 
+# --- 新增：交互式获取 Salt ---
+# 如果环境变量中未设置，则提示用户输入
+if [ -z "$VITE_ACCOUNT_HASH_SALT" ]; then
+    echo "🔒 安全配置: VITE_ACCOUNT_HASH_SALT (用于账户哈希加盐)"
+    echo "   💡 建议设置一个随机字符串以增强安全性（防止彩虹表攻击）"
+    echo "   ⚠️  留空将使用无盐哈希（仅用于开发或兼容旧数据）"
+    read -p "   请输入 Salt (直接回车跳过): " INPUT_SALT
+    
+    if [ -n "$INPUT_SALT" ]; then
+        export VITE_ACCOUNT_HASH_SALT="$INPUT_SALT"
+        echo "   ✅ Salt 已设置"
+    else
+        echo "   ⚠️  未设置 Salt，将使用默认无盐模式"
+    fi
+else
+    echo "   ✅ 检测到环境变量 VITE_ACCOUNT_HASH_SALT 已设置"
+fi
+# ---------------------------
+
 echo "🏗️  构建前端..."
-echo "💡 提示: VITE_ACCOUNT_HASH_SALT=${VITE_ACCOUNT_HASH_SALT:-未设置}"
+echo "   💡 当前 Salt 状态: ${VITE_ACCOUNT_HASH_SALT:-未设置 (无盐)}"
 npm run build
 
 echo "✅ 前端构建完成"

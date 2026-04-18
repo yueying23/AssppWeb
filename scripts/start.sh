@@ -33,19 +33,24 @@ show_help() {
   --data-dir <目录>          设置数据目录 (默认: ~/asspp-data)
   --password <密码>          设置访问密码
   --public-url <URL>         设置公共基础 URL
+  --cleanup-days <天数>      自动清理旧数据的天数 (默认: 0/禁用)
+  --cleanup-max-mb <大小>    触发清理的最大目录大小 MB (默认: 0/禁用)
+  --max-download-mb <大小>   最大允许下载文件大小 MB (默认: 0/禁用)
+  --download-threads <数量>  并发下载线程数 (默认: 8)
+  --salt <盐值>              设置账户哈希盐值 (主要用于前端构建时嵌入)
   --interactive, -i          交互式配置向导
   --save-env                 将配置保存到 .env 文件
   --help, -h                 显示此帮助信息
 
 示例:
   ./scripts/start.sh                              # 使用默认配置
-  ./scripts/start.sh --port 3000                  # 自定义端口
+  ./scripts/start.sh --port 3000 --data-dir /mnt/data
   ./scripts/start.sh -i                           # 交互式配置
-  PORT=3000 ./scripts/start.sh                    # 环境变量方式
 
 环境变量:
-  PORT, DATA_DIR, ACCESS_PASSWORD, VITE_ACCOUNT_HASH_SALT, PUBLIC_BASE_URL
-
+  PORT, DATA_DIR, ACCESS_PASSWORD, PUBLIC_BASE_URL
+  AUTO_CLEANUP_DAYS, AUTO_CLEANUP_MAX_MB, MAX_DOWNLOAD_MB, DOWNLOAD_THREADS
+  VITE_ACCOUNT_HASH_SALT, UNSAFE_DANGEROUSLY_DISABLE_HTTPS_REDIRECT
 EOF
 }
 
@@ -75,15 +80,28 @@ interactive_setup() {
         export ACCESS_PASSWORD="$input_password"
     fi
     
-    # 安全盐值提示
-    echo "💡 提示: VITE_ACCOUNT_HASH_SALT 通常在前端构建时设置"
-    echo "   如需修改，请重新运行 ./scripts/build.sh 或设置环境变量后重启"
-    
     # 公共URL
     read -p "🌐 公共基础URL (留空表示无): " input_url
     if [ -n "$input_url" ]; then
         export PUBLIC_BASE_URL="$input_url"
     fi
+
+    # 自动清理天数
+    read -p "🗑️  自动清理旧数据天数 (0=禁用) [${AUTO_CLEANUP_DAYS:-0}]: " input_cleanup_days
+    if [ -n "$input_cleanup_days" ]; then
+        export AUTO_CLEANUP_DAYS="$input_cleanup_days"
+    fi
+
+    # 最大下载大小
+    read -p "📥 最大下载文件大小 MB (0=禁用) [${MAX_DOWNLOAD_MB:-0}]: " input_max_dl
+    if [ -n "$input_max_dl" ]; then
+        export MAX_DOWNLOAD_MB="$input_max_dl"
+    fi
+    
+    # 安全盐值提示
+    echo ""
+    echo "💡 提示: VITE_ACCOUNT_HASH_SALT 通常在前端构建时设置"
+    echo "   如需修改，请重新运行 ./scripts/build.sh"
     
     echo ""
     echo "✅ 配置完成！"
@@ -100,8 +118,12 @@ save_env_file() {
 DATA_DIR=${DATA_DIR}
 PORT=${PORT}
 ACCESS_PASSWORD=${ACCESS_PASSWORD}
-VITE_ACCOUNT_HASH_SALT=${VITE_ACCOUNT_HASH_SALT}
 PUBLIC_BASE_URL=${PUBLIC_BASE_URL}
+AUTO_CLEANUP_DAYS=${AUTO_CLEANUP_DAYS}
+AUTO_CLEANUP_MAX_MB=${AUTO_CLEANUP_MAX_MB}
+MAX_DOWNLOAD_MB=${MAX_DOWNLOAD_MB}
+DOWNLOAD_THREADS=${DOWNLOAD_THREADS}
+VITE_ACCOUNT_HASH_SALT=${VITE_ACCOUNT_HASH_SALT}
 EOF
     
     echo "✅ 配置已保存到 .env 文件"
@@ -130,6 +152,26 @@ while [[ $# -gt 0 ]]; do
             ;;
         --public-url)
             export PUBLIC_BASE_URL="$2"
+            shift 2
+            ;;
+        --cleanup-days)
+            export AUTO_CLEANUP_DAYS="$2"
+            shift 2
+            ;;
+        --cleanup-max-mb)
+            export AUTO_CLEANUP_MAX_MB="$2"
+            shift 2
+            ;;
+        --max-download-mb)
+            export MAX_DOWNLOAD_MB="$2"
+            shift 2
+            ;;
+        --download-threads)
+            export DOWNLOAD_THREADS="$2"
+            shift 2
+            ;;
+        --salt)
+            export VITE_ACCOUNT_HASH_SALT="$2"
             shift 2
             ;;
         --interactive|-i)
@@ -167,6 +209,15 @@ export PORT="${PORT:-8080}"
 export PUBLIC_BASE_URL="${PUBLIC_BASE_URL:-}"
 export ACCESS_PASSWORD="${ACCESS_PASSWORD:-}"
 export VITE_ACCOUNT_HASH_SALT="${VITE_ACCOUNT_HASH_SALT:-}"
+
+# 后端特定配置默认值
+export AUTO_CLEANUP_DAYS="${AUTO_CLEANUP_DAYS:-0}"
+export AUTO_CLEANUP_MAX_MB="${AUTO_CLEANUP_MAX_MB:-0}"
+export MAX_DOWNLOAD_MB="${MAX_DOWNLOAD_MB:-0}"
+export DOWNLOAD_THREADS="${DOWNLOAD_THREADS:-8}"
+export UNSAFE_DANGEROUSLY_DISABLE_HTTPS_REDIRECT="${UNSAFE_DANGEROUSLY_DISABLE_HTTPS_REDIRECT:-false}"
+
+# 构建信息
 export BUILD_COMMIT="${BUILD_COMMIT:-manual-deploy}"
 export BUILD_DATE="${BUILD_DATE:-$(date +"%Y-%m-%d %H:%M:%S")}"
 
@@ -195,6 +246,8 @@ echo "🚀 Starting ASSPP Web..."
 echo "📂 Data Dir : $DATA_DIR"
 echo "🔌 Port     : $PORT"
 echo "🔒 Password : ${ACCESS_PASSWORD:-None}"
+echo "🗑️  Cleanup  : Days=${AUTO_CLEANUP_DAYS}, MaxMB=${AUTO_CLEANUP_MAX_MB}"
+echo "📥 Max DL   : ${MAX_DOWNLOAD_MB:-0} MB"
 if [ -n "$VITE_ACCOUNT_HASH_SALT" ]; then
     echo "🛡️  Hash Salt: ✅ 已配置 (增强安全)"
 else
