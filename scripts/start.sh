@@ -2,10 +2,11 @@
 
 # ==========================================
 # 启动脚本 for ASSPP Web
-# 支持三种配置方式：
-# 1. 命令行参数: ./scripts/start.sh --port 3000 --data-dir /data
+# 支持多种配置方式：
+# 1. 命令行参数: ./scripts/start.sh --port 3000
 # 2. 环境变量: PORT=3000 ./scripts/start.sh
-# 3. 交互式配置: ./scripts/start.sh --interactive
+# 3. 加载 .env 文件: ./scripts/start.sh --load-env
+# 4. 交互式配置: ./scripts/start.sh --interactive
 # ==========================================
 
 # 获取脚本所在目录 (scripts/)
@@ -37,20 +38,21 @@ show_help() {
   --cleanup-max-mb <大小>    触发清理的最大目录大小 MB (默认: 0/禁用)
   --max-download-mb <大小>   最大允许下载文件大小 MB (默认: 0/禁用)
   --download-threads <数量>  并发下载线程数 (默认: 8)
-  --salt <盐值>              设置账户哈希盐值 (主要用于前端构建时嵌入)
+  --disable-https-redirect   禁用 HTTPS 重定向 (默认: false)
+  --load-env, -l             【推荐】从 .env 文件加载配置 (自动处理格式问题)
   --interactive, -i          交互式配置向导
-  --save-env                 将配置保存到 .env 文件
+  --save-env, -s             将当前配置保存到 .env 文件
   --help, -h                 显示此帮助信息
 
 示例:
-  ./scripts/start.sh                              # 使用默认配置
-  ./scripts/start.sh --port 3000 --data-dir /mnt/data
-  ./scripts/start.sh -i                           # 交互式配置
+  ./scripts/start.sh --load-env                     # 从 .env 加载并启动
+  ./scripts/start.sh --load-env --port 9000         # 从 .env 加载，但覆盖端口为 9000
+  ./scripts/start.sh -i                             # 交互式配置
 
 环境变量:
   PORT, DATA_DIR, ACCESS_PASSWORD, PUBLIC_BASE_URL
   AUTO_CLEANUP_DAYS, AUTO_CLEANUP_MAX_MB, MAX_DOWNLOAD_MB, DOWNLOAD_THREADS
-  VITE_ACCOUNT_HASH_SALT, UNSAFE_DANGEROUSLY_DISABLE_HTTPS_REDIRECT
+  UNSAFE_DANGEROUSLY_DISABLE_HTTPS_REDIRECT
 EOF
 }
 
@@ -98,9 +100,16 @@ interactive_setup() {
         export MAX_DOWNLOAD_MB="$input_max_dl"
     fi
     
+    # HTTPS 重定向
+    read -p "🔓 禁用 HTTPS 重定向? (true/false) [${UNSAFE_DANGEROUSLY_DISABLE_HTTPS_REDIRECT:-false}]: " input_https
+    if [ -n "$input_https" ]; then
+        export UNSAFE_DANGEROUSLY_DISABLE_HTTPS_REDIRECT="$input_https"
+    fi
+    
     # 安全盐值提示
     echo ""
     echo "💡 提示: VITE_ACCOUNT_HASH_SALT 通常在前端构建时设置"
+    echo "   建议设置 VITE_ACCOUNT_HASH_SALT 以防止彩虹表攻击"
     echo "   如需修改，请重新运行 ./scripts/build.sh"
     
     echo ""
@@ -124,10 +133,42 @@ AUTO_CLEANUP_MAX_MB=${AUTO_CLEANUP_MAX_MB}
 MAX_DOWNLOAD_MB=${MAX_DOWNLOAD_MB}
 DOWNLOAD_THREADS=${DOWNLOAD_THREADS}
 VITE_ACCOUNT_HASH_SALT=${VITE_ACCOUNT_HASH_SALT}
+UNSAFE_DANGEROUSLY_DISABLE_HTTPS_REDIRECT=${UNSAFE_DANGEROUSLY_DISABLE_HTTPS_REDIRECT}
 EOF
     
     echo "✅ 配置已保存到 .env 文件"
-    echo "💡 下次启动时可运行: source .env && ./scripts/start.sh"
+}
+
+# ==========================================
+# 函数：从 .env 文件加载配置 (鲁棒性增强版)
+# ==========================================
+load_env_file() {
+    local env_file=".env"
+    if [ ! -f "$env_file" ]; then
+        echo "❌ 错误: 未找到 $env_file 文件"
+        exit 1
+    fi
+
+    echo "📄 正在从 $env_file 加载配置..."
+    
+    # 核心逻辑：
+    # 1. sed '1s/^\xEF\xBB\xBF//': 去除 Windows BOM 头
+    # 2. sed 's/\r$//': 去除 Windows 换行符 \r
+    # 3. grep -v '^#': 过滤注释行
+    # 4. grep -v '^$': 过滤空行
+    # 5. while read: 逐行读取并 export
+    set -a
+    while IFS= read -r line; do
+        # 跳过注释和空行
+        [[ "$line" =~ ^#.*$ ]] && continue
+        [[ -z "$line" ]] && continue
+        
+        # 导出变量
+        export "$line"
+    done < <(sed '1s/^\xEF\xBB\xBF//' "$env_file" | sed 's/\r$//' | grep -v '^#' | grep -v '^$')
+    set +a
+    
+    echo "✅ 配置加载成功"
 }
 
 # ==========================================
@@ -135,6 +176,7 @@ EOF
 # ==========================================
 SAVE_ENV=false
 INTERACTIVE=false
+LOAD_ENV=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -170,15 +212,19 @@ while [[ $# -gt 0 ]]; do
             export DOWNLOAD_THREADS="$2"
             shift 2
             ;;
-        --salt)
-            export VITE_ACCOUNT_HASH_SALT="$2"
-            shift 2
+        --disable-https-redirect)
+            export UNSAFE_DANGEROUSLY_DISABLE_HTTPS_REDIRECT="true"
+            shift
+            ;;
+        --load-env|-l)
+            LOAD_ENV=true
+            shift
             ;;
         --interactive|-i)
             INTERACTIVE=true
             shift
             ;;
-        --save-env)
+        --save-env|-s)
             SAVE_ENV=true
             shift
             ;;
@@ -195,6 +241,13 @@ while [[ $# -gt 0 ]]; do
 done
 
 # ==========================================
+# 执行加载 .env (如果请求)
+# ==========================================
+if [ "$LOAD_ENV" = true ]; then
+    load_env_file
+fi
+
+# ==========================================
 # 执行交互式配置（如果请求）
 # ==========================================
 if [ "$INTERACTIVE" = true ]; then
@@ -203,6 +256,7 @@ fi
 
 # ==========================================
 # 配置环境变量（支持默认值，可被外部覆盖）
+# 优先级: 命令行 > .env/交互 > 默认值
 # ==========================================
 export DATA_DIR="${DATA_DIR:-$HOME/asspp-data}"
 export PORT="${PORT:-8080}"
@@ -246,14 +300,9 @@ echo "🚀 Starting ASSPP Web..."
 echo "📂 Data Dir : $DATA_DIR"
 echo "🔌 Port     : $PORT"
 echo "🔒 Password : ${ACCESS_PASSWORD:-None}"
-echo "🗑️  Cleanup  : Days=${AUTO_CLEANUP_DAYS}, MaxMB=${AUTO_CLEANUP_MAX_MB}"
+echo "🗑️ Cleanup  : Days=${AUTO_CLEANUP_DAYS}, MaxMB=${AUTO_CLEANUP_MAX_MB}"
 echo "📥 Max DL   : ${MAX_DOWNLOAD_MB:-0} MB"
-if [ -n "$VITE_ACCOUNT_HASH_SALT" ]; then
-    echo "🛡️  Hash Salt: ✅ 已配置 (增强安全)"
-else
-    echo "⚠️  Hash Salt: ❌ 未配置 (使用默认哈希)"
-    echo "   💡 建议设置 VITE_ACCOUNT_HASH_SALT 以防止彩虹表攻击"
-fi
+echo "🔓 HTTPS Redirect Disabled: ${UNSAFE_DANGEROUSLY_DISABLE_HTTPS_REDIRECT}"
 echo "----------------------------------------"
 
 # ==========================================
