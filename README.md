@@ -46,14 +46,14 @@
 
 ### 方式一：Docker Compose（推荐）
 
-```bash
+```
 # 1. 克隆仓库
 git clone https://github.com/yueying23/AssppWeb.git
 cd AssppWeb
 
 # 2. 配置环境变量
 cp .env.example .env
-nano .env  # 编辑 JWT_SECRET 和 ACCESS_PASSWORD
+nano .env  # 编辑 ACCESS_PASSWORD 和 VITE_ACCOUNT_HASH_SALT
 
 # 3. 启动服务
 docker compose up -d
@@ -64,12 +64,11 @@ docker compose up -d
 
 ### 方式二：Docker 命令
 
-```bash
+```
 docker run -d \
   --name asspp-web \
   -p 8080:8080 \
   -v asspp-data:/data \
-  -e JWT_SECRET="your-strong-secret-key" \
   -e ACCESS_PASSWORD="your-access-password" \
   -e VITE_ACCOUNT_HASH_SALT=$(openssl rand -hex 32) \
   ghcr.io/yueying23/assppweb:latest
@@ -77,7 +76,7 @@ docker run -d \
 
 ### 方式三：从源码构建
 
-```bash
+```
 # 1. 构建应用
 chmod +x scripts/build.sh
 ./scripts/build.sh
@@ -130,20 +129,17 @@ chmod +x scripts/build.sh
 |--------|--------|------|------|
 | `PORT` | `8080` | 服务端口 | 否 |
 | `DATA_DIR` | `/data` (Docker) 或 `$HOME/asspp-data` | 数据存储目录 | 否 |
-| `JWT_SECRET` | - | JWT 签名密钥（生产环境必须设置） | **是** |
 | `ACCESS_PASSWORD` | - | 访问密码（留空表示无需密码） | 否 |
 | `VITE_ACCOUNT_HASH_SALT` | - | 账户哈希盐值（防止彩虹表攻击） | 推荐 |
 | `DOWNLOAD_THREADS` | `8` | 下载线程数（1-32） | 否 |
 | `MAX_DOWNLOAD_MB` | `0` | 最大下载文件大小 MB（0 表示不限制） | 否 |
 | `AUTO_CLEANUP_DAYS` | `0` | 自动清理天数（0 表示禁用） | 否 |
 | `PUBLIC_BASE_URL` | - | 公共基础 URL（Nginx 反代时使用） | 否 |
+| `UNSAFE_DANGEROUSLY_DISABLE_HTTPS_REDIRECT` | `false` | 禁用 HTTPS 重定向 | 否 |
 
 ### 安全配置建议
 
-```bash
-# 生成强随机 JWT_SECRET
-export JWT_SECRET=$(openssl rand -hex 64)
-
+```
 # 生成账户哈希盐值（防止彩虹表攻击）
 export VITE_ACCOUNT_HASH_SALT=$(openssl rand -hex 32)
 
@@ -160,7 +156,7 @@ export ACCESS_PASSWORD="your-strong-password"
 ### 1. 首次访问
 
 - 如果设置了 `ACCESS_PASSWORD`，输入密码解锁
-- 系统将生成 JWT Token 并存储在 localStorage
+- 系统使用简单的 Token 验证机制（SHA256 哈希对比）
 
 ### 2. 添加 Apple 账户
 
@@ -199,7 +195,7 @@ export ACCESS_PASSWORD="your-strong-password"
 
 ### 本地开发
 
-```bash
+```
 # 终端 1：启动后端
 cd src/backend
 npm install
@@ -215,7 +211,7 @@ npm run dev
 
 ### 测试
 
-```bash
+```
 # 后端测试
 cd src/backend
 npm test
@@ -247,7 +243,7 @@ pnpm test
 
 #### Docker Compose（推荐）
 
-```yaml
+```
 # docker-compose.yml
 version: '3.8'
 services:
@@ -258,7 +254,6 @@ services:
     volumes:
       - asspp-data:/data
     environment:
-      - JWT_SECRET=${JWT_SECRET}
       - ACCESS_PASSWORD=${ACCESS_PASSWORD}
       - VITE_ACCOUNT_HASH_SALT=${VITE_ACCOUNT_HASH_SALT}
     restart: unless-stopped
@@ -267,10 +262,9 @@ volumes:
   asspp-data:
 ```
 
-```bash
+```
 # 创建 .env 文件
 cat > .env << EOF
-JWT_SECRET=$(openssl rand -hex 64)
 ACCESS_PASSWORD=$(openssl rand -base64 32)
 VITE_ACCOUNT_HASH_SALT=$(openssl rand -hex 32)
 EOF
@@ -279,34 +273,254 @@ EOF
 docker compose up -d
 ```
 
-#### Nginx 反向代理
+#### Nginx 反向代理（iOS安装应用必不可少）
 
-``nginx
+**推荐使用项目提供的优化配置模板 [`nginx.conf.example`](nginx.conf.example)。**
+
+该模板针对 AssppWeb 的 Wisp 协议（WebSocket）进行了优化，包含以下特性：
+- ✅ WebSocket 完整支持（Wisp 协议必需）
+- ✅ SSL/TLS 1.2/1.3 安全配置
+- ✅ Gzip 压缩优化
+- ✅ 安全头（CSP、HSTS、X-Frame-Options 等）
+- ✅ 性能优化（缓冲、超时、连接复用）
+- ✅ HTTP 到 HTTPS 自动重定向
+
+**快速部署步骤：**
+
+```
+# 1. 复制配置文件
+sudo cp nginx.conf.example /etc/nginx/sites-available/assppweb
+
+# 2. 编辑配置（修改域名、证书路径等）
+sudo nano /etc/nginx/sites-available/assppweb
+
+# 3. 创建软链接启用站点
+sudo ln -s /etc/nginx/sites-available/assppweb /etc/nginx/sites-enabled/
+
+# 4. 测试配置语法
+sudo nginx -t
+
+# 5. 重载 Nginx
+sudo systemctl reload nginx
+```
+
+**手动配置示例（基础版）：**
+
+如果您需要自定义配置，可以参考以下基础模板：
+
+```
 server {
     listen 443 ssl http2;
     server_name your-domain.com;
 
+    # SSL 证书配置
     ssl_certificate /path/to/cert.pem;
     ssl_certificate_key /path/to/key.pem;
+    
+    # SSL 优化
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+
+    # 安全头
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+
+    # 客户端最大 body 大小
+    client_max_body_size 500M;
 
     location / {
         proxy_pass http://localhost:8080;
+        
+        # 基础代理头
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        
-        # WebSocket 支持
+
+        # WebSocket 支持 (Wisp 协议必需)
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
+
+        # 超时设置
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+        
+        # 缓冲设置 (优化实时进度流)
+        proxy_buffering off;
+        proxy_request_buffering off;
     }
+}
+
+# HTTP 重定向到 HTTPS
+server {
+    listen 80;
+    server_name your-domain.com;
+    return 301 https://$server_name$request_uri;
 }
 ```
 
+⚠️ **重要提示**：
+- iOS 安装链接 `itms-services://` 需要 HTTPS，必须把 AssppWeb 放在一个带有有效 TLS 证书的反向代理后面。
+- 若遇到无限重定向（因 `X-Forwarded-Proto` 错误），可设置 `UNSAFE_DANGEROUSLY_DISABLE_HTTPS_REDIRECT=true` 并强制代理端 HTTPS。
+- WebSocket 支持是必需的，否则 Wisp 协议无法工作，应用将无法与 Apple 服务器通信。
+- 建议使用 Let's Encrypt 免费证书：`sudo certbot --nginx -d your-domain.com`
+- 生产环境请务必配置 `ACCESS_PASSWORD` 环境变量。
+
+---
+
+### Linux 原生部署 (Systemd + Nginx)
+
+除了 Docker 部署，您还可以选择在 Linux 服务器上原生部署 AssppWeb，配合 Nginx 反代实现生产环境运行。
+
+#### 前置要求
+
+- Ubuntu 20.04+ / Debian 11+ / CentOS 8+
+- Node.js 20+
+- Nginx
+- Git
+
+#### 步骤 1：安装依赖
+
+```
+# Ubuntu/Debian
+sudo apt update
+sudo apt install -y nodejs npm nginx git curl
+
+# 验证 Node.js 版本 (需要 20+)
+node --version
+
+# 如果版本过低，使用 NodeSource 安装最新版
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+```
+
+#### 步骤 2：克隆并构建项目
+
+```
+# 克隆仓库
+sudo mkdir -p /opt
+cd /opt
+sudo git clone https://github.com/yueying23/AssppWeb.git
+cd AssppWeb
+
+# 构建项目
+chmod +x scripts/build.sh
+./scripts/build.sh
+
+# 设置权限
+sudo chown -R www-data:www-data /opt/AssppWeb
+```
+
+#### 步骤 3：配置环境变量
+
+```
+# 复制环境变量模板
+sudo cp .env.example .env
+
+# 生成安全密钥
+export ACCESS_PASSWORD=$(openssl rand -base64 32)
+export VITE_ACCOUNT_HASH_SALT=$(openssl rand -hex 32)
+
+# 写入 .env 文件
+cat > .env << EOF
+PORT=8080
+DATA_DIR=/opt/AssppWeb/data
+ACCESS_PASSWORD=$ACCESS_PASSWORD
+VITE_ACCOUNT_HASH_SALT=$VITE_ACCOUNT_HASH_SALT
+DOWNLOAD_THREADS=8
+MAX_DOWNLOAD_MB=0
+AUTO_CLEANUP_DAYS=0
+EOF
+
+# 设置权限（仅 root 可读）
+sudo chmod 600 .env
+sudo chown www-data:www-data .env
+```
+
+#### 步骤 4：创建 Systemd 服务
+
+```
+# 复制服务文件模板
+sudo cp assppweb.service.example /etc/systemd/system/assppweb.service
+
+# 编辑服务文件（确认 WorkingDirectory 路径正确）
+sudo nano /etc/systemd/system/assppweb.service
+
+# 重新加载 systemd 配置
+sudo systemctl daemon-reload
+
+# 启动服务
+sudo systemctl enable --now assppweb
+
+# 检查服务状态
+sudo systemctl status assppweb
+
+# 查看日志
+sudo journalctl -u assppweb -f
+```
+
+#### 步骤 5：配置 Nginx 反代
+
+参考上方的 [Nginx 反向代理](#nginx-反向代理) 章节，使用项目提供的优化配置模板 [`nginx.conf.example`](nginx.conf.example)。
+
+**关键配置项检查清单：**
+- [ ] 修改 `server_name` 为您的域名
+- [ ] 配置 SSL 证书路径（推荐使用 Certbot 自动申请）
+- [ ] 确认 `proxy_pass` 指向正确的后端地址（默认 `127.0.0.1:8080`）
+- [ ] 确保 WebSocket 支持配置正确（`Upgrade` 和 `Connection` 头）
+
+#### 步骤 6：防火墙配置
+
+```
+# 如果使用 UFW (Ubuntu)
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw reload
+
+# 如果使用 firewalld (CentOS)
+sudo firewall-cmd --permanent --add-service=http
+sudo firewall-cmd --permanent --add-service=https
+sudo firewall-cmd --reload
+```
+
+#### 步骤 7：访问应用
+
+打开浏览器访问 `https://your-domain.com`，输入 `ACCESS_PASSWORD` 即可开始使用。
+
+#### 维护命令
+
+```
+# 重启服务
+sudo systemctl restart assppweb
+
+# 停止服务
+sudo systemctl stop assppweb
+
+# 查看实时日志
+sudo journalctl -u assppweb -f
+
+# 查看资源占用
+sudo systemctl status assppweb
+
+# 更新项目
+cd /opt/AssppWeb
+sudo git pull
+./scripts/build.sh
+sudo systemctl restart assppweb
+```
+
+⚠️ **注意事项**：
+- 确保 `.env` 文件权限设置为 `600`，仅 root 或 www-data 用户可读。
+- 定期备份 `/opt/AssppWeb/data` 目录（如果使用本地数据存储）。
+- 监控日志文件大小，配置 logrotate 防止磁盘占满。
+- 建议启用 fail2ban 防止暴力破解 `ACCESS_PASSWORD`。
+
 ### 日志管理
 
-```bash
+```
 # 查看实时日志
 docker compose logs -f
 
@@ -343,7 +557,7 @@ tail -f logs/app-$(date +%Y-%m-%d).log
 1. **凭证隔离**：Apple 密码、Token、Cookies 仅存储在浏览器 IndexedDB 中，受同源策略保护
 2. **TLS 1.3 端到端**：通过 libcurl.js WASM 在浏览器内完成 TLS 握手，服务器无法中间人攻击
 3. **盲目代理**：Wisp 协议仅提供 TCP 隧道，服务器无法解析或记录 Apple 协议内容
-4. **无状态设计**：服务器不维护会话状态，所有身份验证基于 JWT
+4. **无状态设计**：服务器不维护会话状态，使用简单的 Token 验证机制（SHA256 哈希对比）
 5. **加盐哈希**：可选的 Salt 防止账户标识符被彩虹表破解
 
 ### 威胁模型

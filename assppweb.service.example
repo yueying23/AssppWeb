@@ -1,0 +1,54 @@
+[Unit]
+Description=AssppWeb - Apple App Store Sideload Tool
+Documentation=https://github.com/yueying23/AssppWeb
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+
+# 工作目录 (根据实际部署路径修改)
+WorkingDirectory=/opt/AssppWeb
+
+# 启动命令 (根据实际部署方式选择)
+# 方式 1: 使用构建后的产物
+ExecStart=/usr/bin/node /opt/AssppWeb/src/backend/dist/index.js
+
+# 方式 2: 使用 start.sh 脚本 (需确保脚本有执行权限)
+# ExecStart=/opt/AssppWeb/scripts/start.sh --no-interactive
+
+# 环境变量文件 (推荐方式，便于管理配置)
+EnvironmentFile=/opt/AssppWeb/.env
+
+# 或者直接设置环境变量 (不推荐，安全性较低)
+# Environment="PORT=8080"
+# Environment="DATA_DIR=/opt/AssppWeb/data"
+# Environment="JWT_SECRET=your-secret-key"
+# Environment="ACCESS_PASSWORD=your-password"
+
+# 重启策略
+Restart=on-failure
+RestartSec=10
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+# 资源限制
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# 安全加固
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/AssppWeb/data
+PrivateTmp=true
+
+# 日志
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=assppweb
+
+[Install]
+WantedBy=multi-user.target

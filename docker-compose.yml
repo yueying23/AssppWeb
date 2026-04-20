@@ -37,7 +37,6 @@ services:
       
       # 安全配置（强烈建议设置）
       - ACCESS_PASSWORD=${ACCESS_PASSWORD:-}
-      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
       - VITE_ACCOUNT_HASH_SALT=${VITE_ACCOUNT_HASH_SALT:-}
       
       # 可选配置

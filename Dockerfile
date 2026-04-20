@@ -64,7 +64,7 @@ ENV NODE_ENV=production \
     BUILD_COMMIT=$BUILD_COMMIT \
     BUILD_DATE=$BUILD_DATE
 
-# Note: JWT_SECRET and ACCESS_PASSWORD should be set at runtime via docker-compose or -e flag
+# Note: ACCESS_PASSWORD should be set at runtime via docker-compose or -e flag
 # Do NOT set default values here for security reasons
 
 # 健康检查
