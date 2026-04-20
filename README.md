@@ -78,7 +78,7 @@ docker run -d \
 
 ```
 # 1. 构建应用
-chmod +x scripts/build.sh
+chmod +x scripts/build.sh scripts/start.sh
 ./scripts/build.sh
 
 # 2. 交互式配置（首次推荐）
